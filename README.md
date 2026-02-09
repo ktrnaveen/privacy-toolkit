@@ -1,44 +1,98 @@
 # Privacy Toolkit
 
-A collection of enterprise-grade privacy tools that run entirely in your browser. No data is ever sent to a server.
+A collection of **enterprise-grade privacy tools** that run entirely in your browser. No data is ever sent to a server—everything happens client-side using modern Web APIs.
 
-## Features
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue)](https://www.typescriptlang.org/)
 
-- **PDF Redactor**: Permanently redact sensitive information from PDFs with a visual editor.
-- **Image Compression**: Compress images locally without quality loss.
-- **Steganography**: Hide secret messages within images.
-- **Metadata Stripper**: Remove potentially revealing metadata from files.
-- **File Encryption**: Securely encrypt files with AES-256.
+🔒 **100% Client-Side** • ⚡ **Zero Data Transmission** • 🚀 **Works Offline**
 
-## Getting Started
+---
+
+## ✨ Features
+
+### 📦 Image Compression
+Reduce image file sizes by up to 80% while preserving visual quality. Perfect for web optimization.
+- Adjustable quality settings
+- Configurable max width/height
+- Supports JPEG, PNG, WebP, and more
+- Real-time compression preview
+
+### 🔏 Steganography
+Hide secret messages inside images using LSB (Least Significant Bit) encoding. Completely invisible to the naked eye.
+- Encode messages in PNG/JPEG images
+- Extract hidden messages from images
+- Undetectable by visual inspection
+
+### 📋 Metadata Remover
+View and strip EXIF, IPTC, and XMP metadata from images. Protect your privacy before sharing photos.
+- Display all image metadata (GPS, camera info, timestamps)
+- One-click removal of all metadata
+- Highlights sensitive information (GPS coordinates, device info)
+
+### 🔐 File Encryption
+Securely encrypt any file with military-grade AES-256-GCM encryption.
+- AES-256-GCM encryption
+- PBKDF2 key derivation (100,000 iterations)
+- Password never leaves your device
+- Encrypt/decrypt any file type
+
+### 📄 PDF Redactor
+Permanently redact sensitive information from PDF documents with a visual editor.
+- Draw redaction boxes directly on PDF pages
+- Multi-page support
+- Permanent text removal
+- Download redacted PDF instantly
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18.17 or later
+- **Node.js** 18.17 or later
+- **npm** or **yarn**
 
 ### Installation
 
-1. Clone the repository:
+1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/privacy-toolkit.git
+   git clone https://github.com/ktrnaveen/privacy-toolkit.git
    cd privacy-toolkit
    ```
 
-2. Install dependencies:
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. Run the development server:
+3. **Run the development server:**
    ```bash
    npm run dev
    ```
 
-4. Open [http://localhost:3000](http://localhost:3000) with your browser.
+4. **Open in your browser:**
+   
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-## Building for Production
+---
 
-To create a production build:
+## 📖 Usage
+
+### Development Mode
+
+For development with hot-reload:
+
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:3000`
+
+### Production Build
+
+To create an optimized production build:
 
 ```bash
 npm run build
@@ -46,13 +100,115 @@ npm run build
 
 The output will be in the `.next` directory.
 
-## Technologies Used
+To run the production server:
 
-- **Framework**: [Next.js 14](https://nextjs.org/)
-- **PDF Processing**: `pdf-lib`, `pdfjs-dist`
-- **Styling**: CSS Modules
-- **Language**: TypeScript
+```bash
+npm start
+```
 
-## License
+### Linting
 
-MIT
+To check code quality:
+
+```bash
+npm run lint
+```
+
+---
+
+## 🛠️ Technologies Used
+
+- **Framework:** [Next.js 14](https://nextjs.org/) with App Router
+- **Language:** [TypeScript](https://www.typescriptlang.org/)
+- **PDF Processing:** `pdf-lib`, `pdfjs-dist`
+- **Image Compression:** `browser-image-compression`
+- **Metadata Handling:** `exifr`
+- **Styling:** CSS Modules
+- **Encryption:** Web Crypto API (AES-256-GCM)
+
+---
+
+## 🔒 Privacy & Security
+
+- ✅ **100% Client-Side Processing** - All operations happen in your browser using Web APIs
+- ✅ **Zero Data Transmission** - Nothing is ever uploaded to any server
+- ✅ **Works Offline** - Full functionality available without internet connection (after initial load)
+- ✅ **No Tracking** - No cookies, no analytics, no telemetry
+- ✅ **No Account Required** - Use immediately without sign-up
+- ✅ **Open Source** - Fully transparent and auditable code
+
+---
+
+## 🐛 Recent Improvements
+
+### Bug Fixes (Feb 2026)
+- ✅ Fixed ESLint configuration for proper code quality checks
+- ✅ Fixed PDF redaction Y-coordinate conversion bug (redactions now appear at correct positions)
+- ✅ Added memory leak prevention with proper URL cleanup in all components
+- ✅ Improved Web Worker performance by preventing unnecessary recreation
+- ✅ Cleaned up code with better comments and documentation
+
+### Verified & Tested
+- ✅ All 5 features tested and working correctly
+- ✅ Zero ESLint errors or warnings
+- ✅ Production build passes successfully
+- ✅ No console errors during operation
+- ✅ Proper memory management implemented
+
+---
+
+## 📁 Project Structure
+
+```
+privacy-toolkit/
+├── src/
+│   ├── app/              # Next.js app routes
+│   │   ├── compress/     # Image compression page
+│   │   ├── encrypt/      # File encryption page
+│   │   ├── metadata/     # Metadata removal page
+│   │   ├── redact/       # PDF redaction page
+│   │   └── steganography/# Steganography page
+│   ├── components/       # Reusable UI components
+│   ├── hooks/            # Custom React hooks
+│   ├── lib/              # Core utility libraries
+│   │   ├── encryption.ts
+│   │   ├── pdf-redaction.ts
+│   │   └── steganography.ts
+│   └── workers/          # Web Workers for background processing
+├── public/               # Static assets
+└── package.json
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- Built with [Next.js](https://nextjs.org/)
+- PDF processing powered by [pdf-lib](https://pdf-lib.js.org/)
+- Image compression using [browser-image-compression](https://github.com/Donaldcwl/browser-image-compression)
+- Metadata extraction with [exifr](https://github.com/MikeKovarik/exifr)
+
+---
+
+<div align="center">
+  <p>Made with ❤️ for privacy-conscious users</p>
+  <p>⭐ Star this repo if you find it helpful!</p>
+</div>
