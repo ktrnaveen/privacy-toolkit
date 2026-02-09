@@ -15,7 +15,12 @@ export async function encodeMessage(
 ): Promise<Blob> {
     return new Promise((resolve, reject) => {
         const img = new Image();
+        const objectUrl = URL.createObjectURL(imageFile);
+
         img.onload = () => {
+            // Cleanup object URL as soon as image loads
+            URL.revokeObjectURL(objectUrl);
+
             try {
                 const canvas = document.createElement('canvas');
                 canvas.width = img.width;
@@ -69,8 +74,11 @@ export async function encodeMessage(
             }
         };
 
-        img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = URL.createObjectURL(imageFile);
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Failed to load image'));
+        };
+        img.src = objectUrl;
     });
 }
 
@@ -80,7 +88,12 @@ export async function encodeMessage(
 export async function decodeMessage(imageFile: File): Promise<string> {
     return new Promise((resolve, reject) => {
         const img = new Image();
+        const objectUrl = URL.createObjectURL(imageFile);
+
         img.onload = () => {
+            // Cleanup object URL as soon as image loads
+            URL.revokeObjectURL(objectUrl);
+
             try {
                 const canvas = document.createElement('canvas');
                 canvas.width = img.width;
@@ -102,7 +115,8 @@ export async function decodeMessage(imageFile: File): Promise<string> {
                     // Skip alpha channel
                     if (i % 4 === 3) continue;
 
-                    binaryMessage += (data[i] & 1);
+                    // Extract LSB and explicitly convert to string
+                    binaryMessage += (data[i] & 1).toString();
                 }
 
                 // Convert binary to text
@@ -121,8 +135,11 @@ export async function decodeMessage(imageFile: File): Promise<string> {
             }
         };
 
-        img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = URL.createObjectURL(imageFile);
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Failed to load image'));
+        };
+        img.src = objectUrl;
     });
 }
 
