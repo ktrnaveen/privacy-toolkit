@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { FileDropzone, ResultsCard, Button } from '@/components';
 import { encodeMessage, decodeMessage } from '@/lib/steganography';
 import styles from './page.module.css';
@@ -80,6 +80,23 @@ export default function SteganographyPage() {
         setMessage('');
         setError(null);
     };
+
+    // Cleanup URLs when they change or component unmounts
+    useEffect(() => {
+        return () => {
+            if (imagePreview) {
+                URL.revokeObjectURL(imagePreview);
+            }
+        };
+    }, [imagePreview]);
+
+    useEffect(() => {
+        return () => {
+            if (resultUrl) {
+                URL.revokeObjectURL(resultUrl);
+            }
+        };
+    }, [resultUrl]);
 
     return (
         <div className={styles.container}>

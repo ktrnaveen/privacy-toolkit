@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { FileDropzone, ResultsCard, Button } from '@/components';
 import { encryptFile, decryptFile } from '@/lib/encryption';
 import styles from './page.module.css';
@@ -87,6 +87,15 @@ export default function EncryptPage() {
         setResultUrl(null);
         setError(null);
     };
+
+    // Cleanup URL when resultUrl changes or component unmounts
+    useEffect(() => {
+        return () => {
+            if (resultUrl) {
+                URL.revokeObjectURL(resultUrl);
+            }
+        };
+    }, [resultUrl]);
 
     const isValid = mode === 'encrypt'
         ? selectedFile && password.length >= 8 && password === confirmPassword

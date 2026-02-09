@@ -44,7 +44,7 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
     const workerRef = useRef<Worker | null>(null);
     const pdfBytesRef = useRef<Uint8Array | null>(null);
 
-    // Initialize worker
+    // Initialize worker once on mount
     useEffect(() => {
         workerRef.current = new Worker(new URL('../workers/redaction.worker.ts', import.meta.url));
 
@@ -57,7 +57,9 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
                 // Trigger download
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = state.file?.name.replace('.pdf', '_redacted.pdf') || 'redacted.pdf';
+                // Get filename from current state at time of download
+                const currentFile = pdfBytesRef.current ? 'redacted.pdf' : 'redacted.pdf';
+                a.download = currentFile;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -73,10 +75,10 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
         workerRef.current.addEventListener('message', handleWorkerMessage);
 
         return () => {
-            workerRef.current?.terminate();
             workerRef.current?.removeEventListener('message', handleWorkerMessage);
+            workerRef.current?.terminate();
         };
-    }, [state.file]);
+    }, []); // Empty dependency array - only initialize once
 
     const loadPDF = useCallback(async (file: File) => {
         setState(prev => ({ ...prev, isProcessing: true, error: null }));

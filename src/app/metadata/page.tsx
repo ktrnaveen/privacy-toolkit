@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import exifr from 'exifr';
 import { FileDropzone, ResultsCard, Button } from '@/components';
 import styles from './page.module.css';
@@ -106,6 +106,15 @@ export default function MetadataPage() {
         a.download = originalFile.name.replace(/\.[^.]+$/, '_clean.png');
         a.click();
     };
+
+    // Cleanup URL when cleanedUrl changes or component unmounts
+    useEffect(() => {
+        return () => {
+            if (cleanedUrl) {
+                URL.revokeObjectURL(cleanedUrl);
+            }
+        };
+    }, [cleanedUrl]);
 
     const metadataEntries = metadata ? Object.entries(metadata).filter(
         ([key]) => !key.startsWith('_') && !['thumbnail', 'ThumbnailImage'].includes(key)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import imageCompression from 'browser-image-compression';
 import { FileDropzone, ResultsCard, Button } from '@/components';
 import styles from './page.module.css';
@@ -72,6 +72,16 @@ export default function CompressPage() {
         a.download = result.filename;
         a.click();
     };
+
+    // Cleanup URLs when result changes or component unmounts
+    useEffect(() => {
+        return () => {
+            if (result) {
+                URL.revokeObjectURL(result.originalUrl);
+                URL.revokeObjectURL(result.compressedUrl);
+            }
+        };
+    }, [result]);
 
     const compressionRatio = result
         ? (((result.originalSize - result.compressedSize) / result.originalSize) * 100).toFixed(1)

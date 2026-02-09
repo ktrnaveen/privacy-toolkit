@@ -35,39 +35,13 @@ async function applyRedactionsToPDF(
             const pageHeight = page.getHeight();
 
             pageRedactions.forEach(redaction => {
-                // Determine Y coordinate based on whether it's already inverted or not.
-                // Our hook will store coordinates in PDF space (bottom-left origin),
-                // BUT the UI usually works in top-left origin. 
-                // Let's assume the hook/UI passes standard "PDF coordinates" (bottom-left origin) 
-                // OR "UI coordinates" (top-left).
-
-                // Existing logic assumed:
-                // const pdfY = pageHeight - redaction.y - redaction.height;
-                // This implies input `redaction.y` was from top-left.
-
-                // If we standardise on passing valid PDF coordinates (bottom-left origin, 72 DPI),
-                // we shouldn't flip them again here unless we decide the redundant contract is "normalized top-left".
-
-                // Let's make a decision: The WORKER expects PDF COORDINATES (bottom-left origin).
-                // The HOOK/UI handles the conversion from Screen -> PDF.
-
-                // So, no conversion needed here if passed correct PDF coordinates.
-                // However, let's keep the conversion logic IN THE WORKER for now to match the "top-left" expectation of the UI types usually.
-                // Actually, `pdf-lib` uses bottom-left (0,0).
-                // Browsers use top-left (0,0).
-
-                // Let's assume the passed `redaction` object contains `x, y, width, height` in PDF-LIB coordinate space (Bottom-Left), 
-                // UNLESS we want to keep it simple for the UI.
-
-                // Let's stick to the previous implementation for now: UI sends Top-Left based coordinates valid for the PDF page size?
-                // NO, providing PDF coordinates is cleaner.
-
-                // Let's assume for this refactor:
-                // Input: `x, y` are PDF coordinates (Bottom-Left origin).
+                // Convert from UI coordinates (top-left origin) to PDF coordinates (bottom-left origin)
+                // The UI/canvas sends y from top, but pdf-lib expects y from bottom
+                const pdfY = pageHeight - redaction.y - redaction.height;
 
                 page.drawRectangle({
                     x: redaction.x,
-                    y: redaction.y, // Assumes PDF coordinates
+                    y: pdfY,
                     width: redaction.width,
                     height: redaction.height,
                     color: rgb(0, 0, 0),
