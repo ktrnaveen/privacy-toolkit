@@ -1,5 +1,5 @@
-import { useRef, useEffect, useState, MouseEvent } from 'react';
-import { RedactionArea } from '@/lib/pdf-redaction';
+import { useRef, useEffect, PointerEvent } from 'react';
+import type { RedactionArea } from '@/lib/redaction-types';
 
 interface RedactionOverlayProps {
     width: number;
@@ -21,12 +21,12 @@ export function RedactionOverlay({
     pdfHeightPoints
 }: RedactionOverlayProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-    const [currentPos, setCurrentPos] = useState({ x: 0, y: 0 });
+    const rafRef = useRef<number | null>(null);
+    const isDrawingRef = useRef(false);
+    const startPosRef = useRef({ x: 0, y: 0 });
+    const currentPosRef = useRef({ x: 0, y: 0 });
 
-    // Render existing redactions
-    useEffect(() => {
+    const draw = () => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
@@ -35,22 +35,8 @@ export function RedactionOverlay({
 
         ctx.clearRect(0, 0, width, height);
 
-        // Filter redactions for this page
         const pageRedactions = redactions.filter(r => r.pageIndex === pageIndex);
-
-        pageRedactions.forEach(r => {
-            // Convert PDF coordinates (Bottom-Left) to Canvas coordinates (Top-Left)
-            // PDF: (x, y) is bottom-left. 
-            // Canvas Y = pdfHeightPoints - (PDF Y + Height)
-            // BUT wait, we need to map from PDF Points to Canvas Pixels too!
-            // The `scale` prop passed to PDFViewer determines the pixel size.
-            // effectively: Canvas Size = PDF Point Size * scale.
-            // So: Canvas X = PDF X * scale
-            // Canvas Y = (Page Height (points) - PDF Y - Height) * scale
-
-            // Wait, the `viewport` object from pdfjs handles this transformation usually.
-            // But here we are manually collecting existing redactions which are stored in PDF coordinates.
-
+        pageRedactions.forEach((r) => {
             const x = r.x * scale;
             const h = r.height * scale;
             const y = (pdfHeightPoints - r.y) * scale - h;
@@ -64,8 +50,9 @@ export function RedactionOverlay({
             ctx.strokeRect(x, y, w, h);
         });
 
-        // Draw current selection
-        if (isDrawing) {
+        if (isDrawingRef.current) {
+            const startPos = startPosRef.current;
+            const currentPos = currentPosRef.current;
             const rectX = Math.min(startPos.x, currentPos.x);
             const rectY = Math.min(startPos.y, currentPos.y);
             const rectW = Math.abs(currentPos.x - startPos.x);
@@ -80,53 +67,67 @@ export function RedactionOverlay({
             ctx.strokeRect(rectX, rectY, rectW, rectH);
             ctx.setLineDash([]);
         }
+    };
 
-    }, [width, height, scale, pageIndex, redactions, isDrawing, startPos, currentPos, pdfHeightPoints]);
+    const scheduleDraw = () => {
+        if (rafRef.current !== null) return;
+        rafRef.current = window.requestAnimationFrame(() => {
+            rafRef.current = null;
+            draw();
+        });
+    };
 
-    const getCoords = (e: MouseEvent) => {
+    // Render existing redactions
+    useEffect(() => {
+        draw();
+    }, [width, height, scale, pageIndex, redactions, pdfHeightPoints]);
+
+    useEffect(() => {
+        return () => {
+            if (rafRef.current !== null) {
+                window.cancelAnimationFrame(rafRef.current);
+            }
+        };
+    }, []);
+
+    const getCoords = (clientX: number, clientY: number) => {
         const canvas = canvasRef.current;
         if (!canvas) return { x: 0, y: 0 };
         const rect = canvas.getBoundingClientRect();
         return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
+            x: clientX - rect.left,
+            y: clientY - rect.top
         };
     };
 
-    const handleMouseDown = (e: MouseEvent) => {
-        const coords = getCoords(e);
-        setStartPos(coords);
-        setCurrentPos(coords);
-        setIsDrawing(true);
+    const handlePointerDown = (e: PointerEvent<HTMLCanvasElement>) => {
+        if (e.button !== 0) return;
+        const coords = getCoords(e.clientX, e.clientY);
+        isDrawingRef.current = true;
+        startPosRef.current = coords;
+        currentPosRef.current = coords;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        scheduleDraw();
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-        if (!isDrawing) return;
-        setCurrentPos(getCoords(e));
+    const handlePointerMove = (e: PointerEvent<HTMLCanvasElement>) => {
+        if (!isDrawingRef.current) return;
+        currentPosRef.current = getCoords(e.clientX, e.clientY);
+        scheduleDraw();
     };
 
-    const handleMouseUp = () => {
-        if (!isDrawing) return;
-        setIsDrawing(false);
+    const finishDrawing = () => {
+        if (!isDrawingRef.current) return;
+        isDrawingRef.current = false;
 
+        const startPos = startPosRef.current;
+        const currentPos = currentPosRef.current;
         const x = Math.min(startPos.x, currentPos.x);
         const y = Math.min(startPos.y, currentPos.y);
         const w = Math.abs(currentPos.x - startPos.x);
         const h = Math.abs(currentPos.y - startPos.y);
 
         if (w > 5 && h > 5) {
-            // Convert to PDF coordinates (Bottom-Left)
-            // PDF X = Canvas X / scale
-            // PDF Width = Canvas Width / scale
-            // PDF Height = Canvas Height / scale
-            // PDF Y = (Canvas Height / scale) - (Canvas Y / scale) - PDF Height
-            //      = (Height - Y - H) / scale ? No.
-
-            // Let's deduce:
-            // Canvas Y (top) = (PageHeight - PDF_Y - PDF_H) * scale
-            // Canvas Y / scale = PageHeight - PDF_Y - PDF_H
-            // PDF_Y = PageHeight - (Canvas Y / scale) - PDF_H
-
             const pdfX = x / scale;
             const pdfW = w / scale;
             const pdfH = h / scale;
@@ -139,6 +140,14 @@ export function RedactionOverlay({
                 width: pdfW,
                 height: pdfH
             });
+        }
+        scheduleDraw();
+    };
+
+    const handlePointerUp = (e: PointerEvent<HTMLCanvasElement>) => {
+        finishDrawing();
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
         }
     };
 
@@ -154,10 +163,11 @@ export function RedactionOverlay({
                 cursor: 'crosshair',
                 touchAction: 'none'
             }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={() => setIsDrawing(false)}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={finishDrawing}
+            onPointerLeave={finishDrawing}
         />
     );
 }

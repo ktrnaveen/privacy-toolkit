@@ -1,5 +1,5 @@
 import { PDFDocument, rgb } from 'pdf-lib';
-import { RedactionArea } from '@/lib/pdf-redaction';
+import type { RedactionArea } from '@/lib/redaction-types';
 
 self.onmessage = async (e: MessageEvent) => {
     const { pdfBytes, redactions } = e.data;

@@ -23,6 +23,35 @@
     margin: 0 auto;
 }
 
+.uploadSection {
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+.workspace {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    overflow: hidden;
+}
+
+.viewport {
+    overflow: auto;
+    padding: 1rem;
+    min-height: 560px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background:
+        linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+        linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+        linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+    background-color: #fafafa;
+}
+
 /* Editor Layout */
 .editor {
     display: flex;
@@ -344,6 +373,15 @@
 
 /* Responsive */
 @media (max-width: 900px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .viewport {
+        min-height: 420px;
+        padding: 0.75rem;
+    }
+
     .editor {
         flex-direction: column;
     }

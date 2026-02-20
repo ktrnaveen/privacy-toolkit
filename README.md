@@ -45,6 +45,13 @@ Permanently redact sensitive information from PDF documents with a visual editor
 - Permanent text removal
 - Download redacted PDF instantly
 
+### 🚀 UX & Performance Highlights
+- Route-level loading skeletons for faster perceived navigation
+- Heavy libraries (`pdfjs-dist`, `exifr`, `browser-image-compression`) lazy-loaded on demand
+- Reduced route bundle sizes significantly for tool pages
+- Smoother PDF rendering with render cancellation and high-DPI canvas support
+- Better touch/mobile redaction drawing via pointer events + RAF-throttled canvas updates
+
 ---
 
 ## 🚀 Getting Started
@@ -114,6 +121,10 @@ To check code quality:
 npm run lint
 ```
 
+### Changelog
+
+Detailed release notes are maintained in [`CHANGELOG.md`](CHANGELOG.md).
+
 ---
 
 ## 🛠️ Technologies Used
@@ -136,24 +147,6 @@ npm run lint
 - ✅ **No Tracking** - No cookies, no analytics, no telemetry
 - ✅ **No Account Required** - Use immediately without sign-up
 - ✅ **Open Source** - Fully transparent and auditable code
-
----
-
-## 🐛 Recent Improvements
-
-### Bug Fixes (Feb 2026)
-- ✅ Fixed ESLint configuration for proper code quality checks
-- ✅ Fixed PDF redaction Y-coordinate conversion bug (redactions now appear at correct positions)
-- ✅ Added memory leak prevention with proper URL cleanup in all components
-- ✅ Improved Web Worker performance by preventing unnecessary recreation
-- ✅ Cleaned up code with better comments and documentation
-
-### Verified & Tested
-- ✅ All 5 features tested and working correctly
-- ✅ Zero ESLint errors or warnings
-- ✅ Production build passes successfully
-- ✅ No console errors during operation
-- ✅ Proper memory management implemented
 
 ---
 

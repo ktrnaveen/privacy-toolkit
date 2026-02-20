@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import imageCompression from 'browser-image-compression';
 import { FileDropzone, ResultsCard, Button } from '@/components';
 import styles from './page.module.css';
 
@@ -37,6 +36,7 @@ export default function CompressPage() {
             setResult(null);
 
             try {
+                const { default: imageCompression } = await import('browser-image-compression');
                 const options = {
                     maxSizeMB: 10,
                     maxWidthOrHeight: maxWidth,

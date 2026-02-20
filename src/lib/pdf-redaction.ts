@@ -3,15 +3,8 @@
  * All processing happens client-side
  */
 
-import { PDFDocument, PDFPage, rgb } from 'pdf-lib';
-
-export interface RedactionArea {
-    pageIndex: number;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-}
+import { PDFDocument, rgb } from 'pdf-lib';
+import type { RedactionArea } from './redaction-types';
 
 /**
  * Apply black box redactions to a PDF

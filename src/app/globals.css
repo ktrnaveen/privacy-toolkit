@@ -472,6 +472,10 @@ input[type="range"]::-moz-range-thumb {
   body {
     font-size: 15px;
   }
+
+  body::after {
+    opacity: 0.2;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

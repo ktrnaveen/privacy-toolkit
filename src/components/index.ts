@@ -6,3 +6,5 @@ export type { ResultsCardProps } from './ResultsCard';
 
 export { Button } from './Button';
 export type { ButtonProps } from './Button';
+
+export { RouteLoadingSkeleton } from './RouteLoadingSkeleton';

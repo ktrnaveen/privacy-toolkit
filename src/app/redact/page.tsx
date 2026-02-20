@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import type * as pdfjsLib from 'pdfjs-dist';
 import { usePDFRedactor } from '@/hooks/usePDFRedactor';
 import { PDFViewer, RedactionOverlay, PDFToolbar } from '@/components/PDFRedactor';
 import { FileDropzone } from '@/components/FileDropzone';
@@ -27,44 +28,45 @@ export default function RedactPage() {
     // We need to track the current page dimensions to pass to the overlay
     const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number; pdfHeightPoints: number } | null>(null);
 
-    // Auto-scale on load and resize
+    // Auto-fit only until the user changes zoom manually.
     const containerRef = useRef<HTMLDivElement>(null);
-    const [hasAutoScaled, setHasAutoScaled] = useState(false);
+    const [hasManualScale, setHasManualScale] = useState(false);
+
+    const calculateFitScale = useCallback(async () => {
+        if (!pdfDocument || !containerRef.current) return;
+        const page = await pdfDocument.getPage(currentPage);
+        const viewport = page.getViewport({ scale: 1.0 });
+        const containerWidth = containerRef.current.getBoundingClientRect().width;
+        if (containerWidth <= 0) return;
+
+        const availableWidth = Math.max(containerWidth - 24, 120);
+        const scaleToFit = availableWidth / viewport.width;
+        const finalScale = Math.min(Math.max(scaleToFit, 0.5), 1.5);
+        setScale(finalScale);
+    }, [pdfDocument, currentPage, setScale]);
 
     useEffect(() => {
-        // Only auto-scale once when file is loaded and we have page stats
-        if (pdfDocument && containerRef.current && !hasAutoScaled) {
-            const fitScale = async () => {
-                try {
-                    const page = await pdfDocument.getPage(currentPage);
-                    const viewport = page.getViewport({ scale: 1.0 });
-                    const containerWidth = containerRef.current?.getBoundingClientRect().width || 0;
+        if (!pdfDocument || hasManualScale) return;
+        calculateFitScale().catch((e) => console.error('Error auto-scaling:', e));
+    }, [pdfDocument, currentPage, hasManualScale, calculateFitScale]);
 
-                    if (containerWidth > 0) {
-                        // Subtract some padding to be safe (e.g., 40px for margins)
-                        const availableWidth = containerWidth - 40;
-                        const scaleToFit = availableWidth / viewport.width;
+    useEffect(() => {
+        if (!pdfDocument || !containerRef.current || hasManualScale) return;
+        const observer = new ResizeObserver(() => {
+            calculateFitScale().catch((e) => console.error('Error resizing PDF viewport:', e));
+        });
+        observer.observe(containerRef.current);
 
-                        // Limit scale to be reasonable (e.g., not larger than 1.5 default, but at least visible)
-                        const finalScale = Math.min(Math.max(scaleToFit, 0.5), 1.5);
-                        setScale(finalScale);
-                        setHasAutoScaled(true);
-                    }
-                } catch (e) {
-                    console.error("Error auto-scaling:", e);
-                }
-            };
-            fitScale();
-        }
-    }, [pdfDocument, currentPage, containerRef, hasAutoScaled, setScale]);
+        return () => observer.disconnect();
+    }, [pdfDocument, hasManualScale, calculateFitScale]);
 
     // Reset auto-scale flag when file changes
     useEffect(() => {
-        setHasAutoScaled(false);
+        setHasManualScale(false);
+        setPageDimensions(null);
     }, [file]);
 
-
-    const handlePageRendered = (viewport: any) => {
+    const handlePageRendered = (viewport: pdfjsLib.PageViewport) => {
         // viewport.height is in CSS pixels (which equals PDF points * scale)
         // We need the original PDF height in points for coordinate conversion
         setPageDimensions({
@@ -74,7 +76,10 @@ export default function RedactPage() {
         });
     };
 
-
+    const handleZoomChange = (nextScale: number) => {
+        setHasManualScale(true);
+        setScale(nextScale);
+    };
 
     return (
         <div className={styles.container}>
@@ -99,7 +104,7 @@ export default function RedactPage() {
                         totalPages={pageCount}
                         scale={scale}
                         onPageChange={setPage}
-                        onZoomChange={setScale}
+                        onZoomChange={handleZoomChange}
                         onUndo={undoRedaction}
                         onClear={clearRedactions}
                         onDownload={saveRedactedPDF}

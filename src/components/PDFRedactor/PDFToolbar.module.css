@@ -86,3 +86,27 @@
     opacity: 0.7;
     cursor: not-allowed;
 }
+
+@media (max-width: 768px) {
+    .toolbar {
+        gap: 0.5rem;
+        padding: 0.625rem;
+    }
+
+    .separator {
+        display: none;
+    }
+
+    .group {
+        flex-wrap: wrap;
+    }
+
+    .spacer {
+        display: none;
+    }
+
+    .downloadButton {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import exifr from 'exifr';
 import { FileDropzone, ResultsCard, Button } from '@/components';
 import styles from './page.module.css';
 
@@ -37,6 +36,7 @@ export default function MetadataPage() {
         setOriginalFile(file);
 
         try {
+            const { default: exifr } = await import('exifr');
             const data = await exifr.parse(file, {
                 tiff: true,
                 xmp: true,
@@ -66,13 +66,15 @@ export default function MetadataPage() {
         setIsProcessing(true);
         setError(null);
 
+        let sourceUrl: string | null = null;
         try {
             const img = new Image();
+            sourceUrl = URL.createObjectURL(originalFile);
 
             await new Promise<void>((resolve, reject) => {
                 img.onload = () => resolve();
                 img.onerror = () => reject(new Error('Failed to load image'));
-                img.src = URL.createObjectURL(originalFile);
+                img.src = sourceUrl as string;
             });
 
             const canvas = document.createElement('canvas');
@@ -95,6 +97,9 @@ export default function MetadataPage() {
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to clean metadata');
         } finally {
+            if (sourceUrl) {
+                URL.revokeObjectURL(sourceUrl);
+            }
             setIsProcessing(false);
         }
     };

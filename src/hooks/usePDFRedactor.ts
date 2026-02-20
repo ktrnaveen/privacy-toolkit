@@ -1,15 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import * as pdfjsLib from 'pdfjs-dist';
-import { RedactionArea } from '@/lib/pdf-redaction';
-
-// Initialize PDF.js worker
-if (typeof window !== 'undefined' && 'Worker' in window) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-}
+import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { RedactionArea } from '@/lib/redaction-types';
 
 export interface PDFRedactorState {
     file: File | null;
-    pdfDocument: pdfjsLib.PDFDocumentProxy | null;
+    pdfDocument: PDFDocumentProxy | null;
     pageCount: number;
     currentPage: number;
     scale: number;
@@ -42,7 +37,9 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
     });
 
     const workerRef = useRef<Worker | null>(null);
+    const pdfjsRef = useRef<typeof import('pdfjs-dist') | null>(null);
     const pdfBytesRef = useRef<Uint8Array | null>(null);
+    const fileNameRef = useRef<string>('redacted.pdf');
 
     // Initialize worker once on mount
     useEffect(() => {
@@ -57,9 +54,7 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
                 // Trigger download
                 const a = document.createElement('a');
                 a.href = url;
-                // Get filename from current state at time of download
-                const currentFile = pdfBytesRef.current ? 'redacted.pdf' : 'redacted.pdf';
-                a.download = currentFile;
+                a.download = fileNameRef.current;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -83,12 +78,19 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
     const loadPDF = useCallback(async (file: File) => {
         setState(prev => ({ ...prev, isProcessing: true, error: null }));
         try {
+            const pdfjs = pdfjsRef.current ?? await import('pdfjs-dist');
+            pdfjsRef.current = pdfjs;
+            if (typeof window !== 'undefined' && 'Worker' in window) {
+                pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+            }
+
             const arrayBuffer = await file.arrayBuffer();
             const bytes = new Uint8Array(arrayBuffer);
             // Clone the bytes for our own worker, as PDF.js might transfer the buffer
             pdfBytesRef.current = new Uint8Array(bytes);
+            fileNameRef.current = file.name.replace(/\.pdf$/i, '') + '_redacted.pdf';
 
-            const loadingTask = pdfjsLib.getDocument({ data: bytes });
+            const loadingTask = pdfjs.getDocument({ data: bytes });
             const pdf = await loadingTask.promise;
 
             setState(prev => ({
@@ -151,10 +153,11 @@ export function usePDFRedactor(): UsePDFRedactorReturn {
 
         setState(prev => ({ ...prev, isProcessing: true, error: null }));
 
+        const bytesForWorker = pdfBytesRef.current.slice();
         workerRef.current.postMessage({
-            pdfBytes: pdfBytesRef.current,
+            pdfBytes: bytesForWorker,
             redactions: state.redactions,
-        });
+        }, [bytesForWorker.buffer]);
     }, [state.redactions]);
 
     return {

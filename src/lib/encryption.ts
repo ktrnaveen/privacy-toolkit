@@ -5,6 +5,7 @@
 
 const SALT_LENGTH = 16;
 const IV_LENGTH = 12;
+const FILENAME_LENGTH_BYTES = 2;
 const KEY_ITERATIONS = 100000;
 
 /**
@@ -59,17 +60,22 @@ export async function encryptFile(file: File, password: string): Promise<Blob> {
     // Store original filename in encrypted metadata
     const encoder = new TextEncoder();
     const filenameBytes = encoder.encode(file.name);
-    const filenameLength = new Uint8Array([filenameBytes.length]);
+    if (filenameBytes.length > 0xffff) {
+        throw new Error('Filename is too long to encrypt safely');
+    }
 
-    // Combine: salt + iv + filenameLength + filename + encrypted content
+    const filenameLength = new Uint8Array(FILENAME_LENGTH_BYTES);
+    new DataView(filenameLength.buffer).setUint16(0, filenameBytes.length, true);
+
+    // Combine: salt + iv + filenameLength (uint16) + filename + encrypted content
     const combined = new Uint8Array(
-        SALT_LENGTH + IV_LENGTH + 1 + filenameBytes.length + encryptedContent.byteLength
+        SALT_LENGTH + IV_LENGTH + FILENAME_LENGTH_BYTES + filenameBytes.length + encryptedContent.byteLength
     );
 
     let offset = 0;
     combined.set(salt, offset); offset += SALT_LENGTH;
     combined.set(iv, offset); offset += IV_LENGTH;
-    combined.set(filenameLength, offset); offset += 1;
+    combined.set(filenameLength, offset); offset += FILENAME_LENGTH_BYTES;
     combined.set(filenameBytes, offset); offset += filenameBytes.length;
     combined.set(new Uint8Array(encryptedContent), offset);
 
@@ -85,12 +91,20 @@ export async function decryptFile(
 ): Promise<{ blob: Blob; filename: string }> {
     const buffer = await encryptedBlob.arrayBuffer();
     const data = new Uint8Array(buffer);
+    const minimumHeaderLength = SALT_LENGTH + IV_LENGTH + FILENAME_LENGTH_BYTES;
+    if (data.length < minimumHeaderLength) {
+        throw new Error('Invalid encrypted file format');
+    }
 
     // Extract components
     let offset = 0;
     const salt = data.slice(offset, offset + SALT_LENGTH); offset += SALT_LENGTH;
     const iv = data.slice(offset, offset + IV_LENGTH); offset += IV_LENGTH;
-    const filenameLength = data[offset]; offset += 1;
+    const filenameLength = new DataView(data.buffer, data.byteOffset + offset, FILENAME_LENGTH_BYTES).getUint16(0, true);
+    offset += FILENAME_LENGTH_BYTES;
+    if (offset + filenameLength > data.length) {
+        throw new Error('Invalid encrypted file header');
+    }
     const filenameBytes = data.slice(offset, offset + filenameLength); offset += filenameLength;
     const encryptedContent = data.slice(offset);
 

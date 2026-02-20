@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, DragEvent, ChangeEvent } from 'react';
+import { useCallback, useState, DragEvent, ChangeEvent, useId } from 'react';
 import styles from './FileDropzone.module.css';
 
 export interface FileDropzoneProps {
@@ -22,6 +22,7 @@ export function FileDropzone({
     description = 'or click to browse',
     disabled = false,
 }: FileDropzoneProps) {
+    const inputId = useId();
     const [isDragging, setIsDragging] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -90,9 +91,9 @@ export function FileDropzone({
                 onChange={handleFileInput}
                 disabled={disabled}
                 className={styles.input}
-                id="file-dropzone-input"
+                id={inputId}
             />
-            <label htmlFor="file-dropzone-input" className={styles.label}>
+            <label htmlFor={inputId} className={styles.label}>
                 <div className={styles.iconWrapper}>
                     <div className={styles.iconBg}></div>
                     <svg className={styles.icon} width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
